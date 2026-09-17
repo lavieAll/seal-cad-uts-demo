@@ -1,0 +1,95 @@
+<template>
+  <view class="page">
+    <view class="header">
+      <view><text class="title">seal-cad-uts</text><text class="subtitle">CAD API + 内嵌渲染组件</text></view>
+      <text class="badge">{{ isTablet ? '平板布局' : '手机布局' }}</text>
+    </view>
+    <view class="body">
+      <seal-cad-viewer class="viewer" :doc-id="docId" :revision="revision" :loading="opening" :loading-text="loadingLabel" />
+      <view class="panel">
+        <text class="section">文档测试</text>
+        <text class="status">{{ status }}</text>
+        <button class="action-button" @click="openDocument">打开 DXF 示例</button>
+        <button class="action-button" :disabled="opening" @click="chooseLocalDocument">选择本地 DXF / DWG 文件</button>
+        <button class="action-button" @click="toggleFullScreen">全屏预览</button>
+        <button class="action-button" @click="measure">测量 (0,0) → (3,4)</button>
+        <button class="action-button" @click="toggleLayer">切换首个图层</button>
+        <text class="result">{{ result }}</text>
+      </view>
+    </view>
+  </view>
+</template>
+<script setup lang="uts">
+import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts/index.uts'
+const docId = ref('')
+const revision = ref(0)
+onResize(() => { revision.value++ })
+const status = ref('准备就绪')
+const result = ref('')
+const isTablet = ref(false)
+const selectedPath = ref('')
+const opening = ref(false)
+const loadingLabel = ref('正在加载 CAD 文件')
+function renderDocument(src: string, label: string): void {
+  if (opening.value) return
+  opening.value = true
+  loadingLabel.value = `正在打开 ${label}`
+  status.value = `正在解析：${label}`
+  cadApi.open({ src: src, fileType: label.toLowerCase().endsWith('.dwg') ? 'dwg' : 'dxf', success: (doc: CadDocInfo) => {
+    const previous = docId.value
+    docId.value = doc.docId
+    if (previous.length > 0) cadApi.close(previous)
+    selectedPath.value = src
+    status.value = `已打开 ${label} · ${doc.entityCount} 个实体 · ${doc.layers.length} 个图层`
+    if (doc.unsupported.length > 0) result.value = `部分内容未支持：${doc.unsupported.join(', ')}`
+    else result.value = `范围：${doc.bbox.minX},${doc.bbox.minY} – ${doc.bbox.maxX},${doc.bbox.maxY}`
+    if (doc.warnings.length > 0) result.value += '\n' + doc.warnings.join('\n')
+  }, fail: (e: CadFail) => { status.value = e.errMsg }, complete: () => { opening.value = false } })
+}
+function openDocument(): void { renderDocument('/static/sample.dxf', 'sample.dxf') }
+function toggleFullScreen(): void {
+  if (docId.value.length == 0) { status.value='请先打开 CAD 文件'; return }
+  uni.navigateTo({ url: '/pages/cad-preview/cad-preview?docId='+encodeURIComponent(docId.value) })
+}
+function chooseLocalDocument(): void {
+  uni.chooseFile({
+    count: 1,
+    type: 'all',
+    success: (res: ChooseFileSuccess) => {
+      if (res.tempFiles.length == 0) return
+      const file = res.tempFiles[0]
+      if (!file.name.toLowerCase().endsWith('.dxf') && !file.name.toLowerCase().endsWith('.dwg')) {
+        status.value = '请选择 DXF 或 DWG 文件'
+        return
+      }
+      // content:// URI 不含扩展名，必须通过所选文件名明确传入 fileType。
+      renderDocument(file.path, file.name)
+    },
+    fail: (err: ChooseFileFail) => {
+      status.value = err.errCode == 1101001 ? '已取消文件选择' : `文件选择失败：${err.errMsg}`
+    }
+  })
+}
+function measure(): void { result.value=`距离：${cadApi.measureDistance('', {x:0,y:0}, {x:3,y:4})}` }
+function toggleLayer(): void {
+  const doc = cadApi.get(docId.value)
+  if (doc == null) { result.value='请先打开 CAD 文件'; return }
+  if (doc.layers.length == 0) { result.value='文档没有图层'; return }
+  const layer = doc.layers[0]
+  cadApi.setLayerVisible(doc.docId, layer.name, !layer.visible)
+  revision.value++
+  result.value = `${layer.name} 图层已${layer.visible ? '显示' : '隐藏'}`
+}
+</script>
+<style>
+.page { flex: 1; padding: 28px 20px; background-color: #0d1117; }
+.header { flex-direction: row; justify-content: space-between; align-items: center; }
+.title { color: #f0f6fc; font-size: 24px; font-weight: bold; }
+.subtitle, .status, .result { color: #8b949e; margin-top: 8px; }
+.badge { color: #58a6ff; border-width: 1px; border-color: #264f78; padding: 6px 10px; border-radius: 12px; }
+.body { flex: 1; margin-top: 22px; }
+.viewer { min-height: 280px; background-color: #171b22; }
+.panel { padding: 16px 0; }
+.section { color: #f0f6fc; font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+.action-button { margin-top: 10px; }
+</style>

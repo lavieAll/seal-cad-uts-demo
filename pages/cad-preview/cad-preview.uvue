@@ -1,0 +1,21 @@
+<template>
+  <view class="page">
+    <view class="bar"><text class="back" @click="back">‹ 返回</text><text class="title">CAD 预览 · 单指移动 / 双指缩放</text></view>
+    <seal-cad-viewer :doc-id="docId" :revision="revision" />
+  </view>
+</template>
+<script setup lang="uts">
+const docId = ref('')
+const revision = ref(0)
+onResize(() => { revision.value++ })
+// 页面渲染完成后再让查看器重绘一次，避免首帧画布尺寸为 0。
+onReady(() => { revision.value++ })
+onLoad((options) => { docId.value = options['docId'] ?? '' })
+function back(): void { uni.navigateBack() }
+</script>
+<style>
+.page { flex: 1; background-color: #212830; padding-top: 32px; }
+.bar { flex-direction: row; align-items: center; padding: 12px; }
+.back { color: #e5ecf3; padding: 8px; font-size: 16px; }
+.title { color: #9caebc; font-size: 12px; margin-left: 12px; }
+</style>
