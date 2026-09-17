@@ -20,7 +20,7 @@
   </view>
 </template>
 <script setup lang="uts">
-import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts/index.uts'
+import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts'
 const docId = ref('')
 const revision = ref(0)
 onResize(() => { revision.value++ })

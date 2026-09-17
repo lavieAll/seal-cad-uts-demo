@@ -26,6 +26,8 @@ Demo：[Gitee](https://gitee.com/twofloor/seal-cad-uts-demo) · [GitHub](https:/
 
 Android 项目首次安装或更新插件后，需要使用包含该插件的 Android 自定义基座运行。正式发行时，插件会随应用一起打包。
 
+标准基座可以打开 DXF；DWG 预览依赖插件内的原生库，必须使用包含本插件的 Android 自定义基座。
+
 示例中的文件选择、文件读取和预览需要启用 `uni-media`、`uni-fileSystemManager`、`uni-canvas` 模块；使用网络下载示例时还需要 `uni-network`。请在项目的 Android 模块配置中启用所需模块，然后制作自定义基座。
 
 页面中使用组件前，请确保组件容器有明确的宽度和高度。推荐使用 `flex: 1`，或设置固定的 `height`。
@@ -37,7 +39,7 @@ Android 项目首次安装或更新插件后，需要使用包含该插件的 An
 ### 导入 API
 
 ```ts
-import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts/index.uts'
+import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts'
 ```
 
 ### 页面模板
@@ -63,7 +65,7 @@ import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts/index.ut
 
 ```vue
 <script setup lang="uts">
-import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts/index.uts'
+import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts'
 
 const docId = ref('')
 const revision = ref(0)
@@ -445,7 +447,7 @@ cadApi.open({
 公共类型直接从插件导入，无需在业务页面重新定义：
 
 ```ts
-import { CadPoint, CadDocInfo, CadLayer, CadBBox, CadFail } from '@/uni_modules/seal-cad-uts/index.uts'
+import { CadPoint, CadDocInfo, CadLayer, CadBBox, CadFail } from '@/uni_modules/seal-cad-uts'
 ```
 
 | 类型 | 常用字段 | 用途 |
