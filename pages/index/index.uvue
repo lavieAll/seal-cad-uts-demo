@@ -20,7 +20,7 @@
   </view>
 </template>
 <script setup lang="uts">
-import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts'
+import { cadApi, CadDocInfo, CadFail, CadOpenOptions, CadPoint } from '@/uni_modules/seal-cad-uts'
 const docId = ref('')
 const revision = ref(0)
 onResize(() => { revision.value++ })
@@ -35,16 +35,23 @@ function renderDocument(src: string, label: string): void {
   opening.value = true
   loadingLabel.value = `正在打开 ${label}`
   status.value = `正在解析：${label}`
-  cadApi.open({ src: src, fileType: label.toLowerCase().endsWith('.dwg') ? 'dwg' : 'dxf', success: (doc: CadDocInfo) => {
-    const previous = docId.value
-    docId.value = doc.docId
-    if (previous.length > 0) cadApi.close(previous)
-    selectedPath.value = src
-    status.value = `已打开 ${label} · ${doc.entityCount} 个实体 · ${doc.layers.length} 个图层`
-    if (doc.unsupported.length > 0) result.value = `部分内容未支持：${doc.unsupported.join(', ')}`
-    else result.value = `范围：${doc.bbox.minX},${doc.bbox.minY} – ${doc.bbox.maxX},${doc.bbox.maxY}`
-    if (doc.warnings.length > 0) result.value += '\n' + doc.warnings.join('\n')
-  }, fail: (e: CadFail) => { status.value = e.errMsg }, complete: () => { opening.value = false } })
+  const options: CadOpenOptions = {
+    src: src,
+    fileType: label.toLowerCase().endsWith('.dwg') ? 'dwg' : 'dxf',
+    success: (doc: CadDocInfo) => {
+      const previous = docId.value
+      docId.value = doc.docId
+      if (previous.length > 0) cadApi.close(previous)
+      selectedPath.value = src
+      status.value = `已打开 ${label} · ${doc.entityCount} 个实体 · ${doc.layers.length} 个图层`
+      if (doc.unsupported.length > 0) result.value = `部分内容未支持：${doc.unsupported.join(', ')}`
+      else result.value = `范围：${doc.bbox.minX},${doc.bbox.minY} – ${doc.bbox.maxX},${doc.bbox.maxY}`
+      if (doc.warnings.length > 0) result.value += '\n' + doc.warnings.join('\n')
+    },
+    fail: (e: CadFail) => { status.value = e.errMsg },
+    complete: () => { opening.value = false }
+  }
+  cadApi.open(options)
 }
 function openDocument(): void { renderDocument('/static/sample.dxf', 'sample.dxf') }
 function toggleFullScreen(): void {
@@ -70,7 +77,11 @@ function chooseLocalDocument(): void {
     }
   })
 }
-function measure(): void { result.value=`距离：${cadApi.measureDistance('', {x:0,y:0}, {x:3,y:4})}` }
+function measure(): void {
+  const p1: CadPoint = { x: 0, y: 0 }
+  const p2: CadPoint = { x: 3, y: 4 }
+  result.value = `距离：${cadApi.measureDistance('', p1, p2)}`
+}
 function toggleLayer(): void {
   const doc = cadApi.get(docId.value)
   if (doc == null) { result.value='请先打开 CAD 文件'; return }
