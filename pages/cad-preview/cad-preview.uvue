@@ -18,4 +18,12 @@ function back(): void { uni.navigateBack() }
 .bar { flex-direction: row; align-items: center; padding: 12px; }
 .back { color: #e5ecf3; padding: 8px; font-size: 16px; }
 .title { color: #9caebc; font-size: 12px; margin-left: 12px; }
+/* #ifdef APP-IOS */
+.page {
+  padding-top: var(--uni-safe-area-inset-top);
+  padding-bottom: var(--uni-safe-area-inset-bottom);
+  padding-left: var(--uni-safe-area-inset-left);
+  padding-right: var(--uni-safe-area-inset-right);
+}
+/* #endif */
 </style>

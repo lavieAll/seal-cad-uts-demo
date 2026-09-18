@@ -4,7 +4,7 @@ Demo：[Gitee](https://gitee.com/twofloor/seal-cad-uts-demo) · [GitHub](https:/
 
 `seal-cad-uts` 是面向 uni-app x 应用的 CAD 文档预览插件，提供文档打开、图层控制、距离计算和内嵌预览组件。业务页面只需要传入本地文件路径和文档 ID，即可在手机或平板页面中展示 CAD 图纸。
 
-当前 Android 平台支持 DXF、DWG 文档预览，支持内嵌预览、独立全屏预览、单指移动、双指缩放与平移、图层显隐和加载状态提示。下一步计划支持鸿蒙 Next 和 iOS。
+当前 Android 平台支持 DXF、DWG 文档预览，支持内嵌预览、独立全屏预览、单指移动、双指缩放与平移、图层显隐和加载状态提示。鸿蒙 Next 已接入相同 API、画布组件和离线 DWG 解码，真机验收待完成；iOS 仍计划支持。
 
 👏👏👏欢迎W（BJGFCYY）或Q（2480621579）咨询。
 
@@ -13,7 +13,7 @@ Demo：[Gitee](https://gitee.com/twofloor/seal-cad-uts-demo) · [GitHub](https:/
 | 平台 | 状态 | 当前能力 |
 | --- | --- | --- |
 | Android | 已支持 | DXF / DWG 打开和预览、触摸交互、全屏预览 |
-| 鸿蒙 Next | 计划支持 | 计划提供统一的公开 API 和预览组件 |
+| 鸿蒙 Next | 已实现，待真机验收 | 共用 DXF / 画布组件，HAR 离线 DWG 解码，ARM64 / x86_64 |
 | iOS | 计划支持 | 计划提供统一的公开 API 和预览组件 |
 
 支持的常用 CAD 图形包括直线、圆弧、圆、椭圆、多段线、样条、块、标注、文字、填充和部分三维面线框。复杂专有对象、外部参照、特殊字体和部分高级 CAD 特性可能无法完全还原，实际显示结果以文档内容为准。
@@ -31,6 +31,16 @@ Android 项目首次安装或更新插件后，需要使用包含该插件的 An
 示例中的文件选择、文件读取和预览需要启用 `uni-media`、`uni-fileSystemManager`、`uni-canvas` 模块；使用网络下载示例时还需要 `uni-network`。请在项目的 Android 模块配置中启用所需模块，然后制作自定义基座。
 
 页面中使用组件前，请确保组件容器有明确的宽度和高度。推荐使用 `flex: 1`，或设置固定的 `height`。
+
+## 鸿蒙 Next 接入
+
+使用支持 uni-app x 鸿蒙插件的 HBuilderX 4.61+ 和 HarmonyOS 5.0 / API 12+。插件通过 `utssdk/app-harmony/config.json` 引用内置的 `libs/seal-cad-dwg.har`，包含 ARM64 真机和 x86_64 模拟器原生库。无需服务端转换。
+
+在 HBuilderX 导出鸿蒙工程后，使用 DevEco Studio 同步依赖、配置应用签名并运行。首次安装及 HAR 更新后须重新构建包含插件的鸿蒙应用；不能只热更新，也不能依赖未包含 HAR 的标准基座。
+
+鸿蒙沿用下文的 `cadApi`、`seal-cad-viewer` 和全屏页面。文件选择器返回的 `file://` URI 应原样传入 `src`，并根据文件名传入 `fileType`；在授权有效期内打开文件。支持应用沙箱路径、项目静态资源路径及已下载文件，不需额外申请整个存储空间的访问权限。
+
+DWG 在原生工作线程转换，输入上限 64 MB，输出上限 128 MB；旧版 DWG 按原始代码页解码中文。转换后的 DXF 场景解析和画布绘制仍在 UI 线程执行，大图纸可能有短暂停顿。鸿蒙真机上的文字、填充、手势和全屏效果仍需验收。
 
 ## 快速开始
 
@@ -176,7 +186,7 @@ function chooseCadFile(): void {
 }
 ```
 
-部分 Android 文件选择器返回的路径是没有扩展名的 URI，因此建议始终显式传入 `fileType`。插件支持以下写法：
+部分 Android / 鸿蒙文件选择器返回的路径是没有扩展名的 URI，因此建议始终显式传入 `fileType`。插件支持以下写法：
 
 ```ts
 const options: CadOpenOptions = {
@@ -511,8 +521,8 @@ import { CadPoint, CadOpenOptions, CadDocInfo, CadLayer, CadBBox, CadFail } from
 
 下一步将围绕统一的 API 和组件用法推进以下适配，减少业务页面的跨平台接入差异：
 
-1. **鸿蒙 Next 适配**：完成 DXF / DWG 文件读取、文档预览组件、全屏页面和手机 / 平板触摸交互。
+1. **鸿蒙 Next 验收**：在手机 / 平板验证 DXF / DWG 文件选择、画布显示、全屏、触摸交互与窗口尺寸变化。
 2. **iOS 适配**：完成 DXF / DWG 文件读取、文档预览组件、全屏页面、安全区适配和 iPhone / iPad 触摸交互。
 3. **跨平台一致性验证**：使用相同的 API、示例图纸和交互流程验证三端显示结果。
 
-鸿蒙 Next 和 iOS 适配完成并通过对应平台验证后，将在版本说明中公布可用版本和接入要求。在适配版本发布前，请以 Android 平台状态为准。
+鸿蒙 Next 的本机自动化验证不能替代真机验收；iOS 适配完成后会另行公布接入要求。
