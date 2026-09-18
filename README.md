@@ -39,7 +39,7 @@ Android 项目首次安装或更新插件后，需要使用包含该插件的 An
 ### 导入 API
 
 ```ts
-import { cadApi, CadDocInfo, CadFail } from '@/uni_modules/seal-cad-uts'
+import { cadApi, CadDocInfo, CadFail, CadOpenOptions, CadPoint } from '@/uni_modules/seal-cad-uts'
 ```
 
 ### 页面模板
@@ -82,7 +82,7 @@ function openDocument(path: string, fileName: string): void {
   status.value = '正在读取文件'
 
   const type = fileName.toLowerCase().endsWith('.dwg') ? 'dwg' : 'dxf'
-  cadApi.open({
+  const options: CadOpenOptions = {
     src: path,
     fileType: type,
     success: (doc: CadDocInfo) => {
@@ -103,7 +103,8 @@ function openDocument(path: string, fileName: string): void {
     complete: () => {
       if (!unloaded) opening.value = false
     }
-  })
+  }
+  cadApi.open(options)
 }
 
 function openSample(): void {
@@ -178,7 +179,7 @@ function chooseCadFile(): void {
 部分 Android 文件选择器返回的路径是没有扩展名的 URI，因此建议始终显式传入 `fileType`。插件支持以下写法：
 
 ```ts
-cadApi.open({
+const options: CadOpenOptions = {
   src: file.path,
   fileType: 'dwg',
   success: (doc: CadDocInfo) => {
@@ -187,7 +188,8 @@ cadApi.open({
   fail: (error: CadFail) => {
     status.value = error.errMsg
   }
-})
+}
+cadApi.open(options)
 ```
 
 ## 打开网络文件
@@ -383,11 +385,9 @@ function toggleFirstLayer(): void {
 `measureDistance()` 接受同一图纸坐标系中的两个点，返回两点距离：
 
 ```ts
-const distance = cadApi.measureDistance(
-  docId.value,
-  { x: 0, y: 0 },
-  { x: 3, y: 4 }
-)
+const p1: CadPoint = { x: 0, y: 0 }
+const p2: CadPoint = { x: 3, y: 4 }
+const distance = cadApi.measureDistance(docId.value, p1, p2)
 
 status.value = `距离：${distance}` // 5
 ```
@@ -401,13 +401,14 @@ status.value = `距离：${distance}` // 5
 打开本地 DXF 或 DWG 文件。
 
 ```ts
-cadApi.open({
+const options: CadOpenOptions = {
   src: '/static/sample.dxf',
   fileType: 'dxf',
   success: (doc: CadDocInfo) => {},
   fail: (error: CadFail) => {},
   complete: () => {}
-})
+}
+cadApi.open(options)
 ```
 
 | 参数 | 类型 | 说明 |
@@ -447,12 +448,13 @@ cadApi.open({
 公共类型直接从插件导入，无需在业务页面重新定义：
 
 ```ts
-import { CadPoint, CadDocInfo, CadLayer, CadBBox, CadFail } from '@/uni_modules/seal-cad-uts'
+import { CadPoint, CadOpenOptions, CadDocInfo, CadLayer, CadBBox, CadFail } from '@/uni_modules/seal-cad-uts'
 ```
 
 | 类型 | 常用字段 | 用途 |
 | --- | --- | --- |
 | `CadPoint` | `x: number`、`y: number` | 图纸坐标点 |
+| `CadOpenOptions` | `src`、`fileType`、`success`、`fail`、`complete` | `cadApi.open()` 参数 |
 | `CadLayer` | `name: string`、`visible: boolean`、`colorHex: string` | 图层名称、可见性和颜色 |
 | `CadBBox` | `minX`、`minY`、`maxX`、`maxY`，均为 `number` | 图纸范围 |
 | `CadFail` | `errCode: CadErrorCode`、`errMsg: string` | 失败信息 |
